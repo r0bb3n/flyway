@@ -253,6 +253,7 @@ public class Main {
         LOG.info("configFileEncoding           : Encoding of the config file (default: UTF-8)");
         LOG.info("jarDirs                      : Dirs for Jdbc drivers & Java migrations (default: jars)");
         LOG.info("initSqls                     : Semicolon-separated list of statements to apply on opened connection");
+        LOG.info("connectionProperties         : Semicolon-separated list of properties (key=value) to submit to jdbc driver while connecting");
         LOG.info("");
         LOG.info("Add -X to print debug output");
         LOG.info("Add -q to suppress all output, except for errors and warnings");
