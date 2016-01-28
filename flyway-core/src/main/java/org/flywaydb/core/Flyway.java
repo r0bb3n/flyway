@@ -1059,8 +1059,17 @@ public class Flyway implements FlywayConfiguration {
         String userProp = getValueAndRemoveEntry(props, "flyway.user");
         String passwordProp = getValueAndRemoveEntry(props, "flyway.password");
 
+        String initSqlsProp = getValueAndRemoveEntry(props, "flyway.initSqls");
+        String[] initSqls;
+        if (StringUtils.hasText(initSqlsProp)) {
+            initSqls = StringUtils.tokenizeToStringArray(initSqlsProp, ";");
+        } else {
+            initSqls = new String[0];
+        }
+
+
         if (StringUtils.hasText(urlProp)) {
-            setDataSource(new DriverDataSource(classLoader, driverProp, urlProp, userProp, passwordProp));
+            setDataSource(new DriverDataSource(classLoader, driverProp, urlProp, userProp, passwordProp, initSqls));
         } else if (!StringUtils.hasText(urlProp) &&
                 (StringUtils.hasText(driverProp) || StringUtils.hasText(userProp) || StringUtils.hasText(passwordProp))) {
             LOG.warn("Discarding INCOMPLETE dataSource configuration! flyway.url must be set.");
