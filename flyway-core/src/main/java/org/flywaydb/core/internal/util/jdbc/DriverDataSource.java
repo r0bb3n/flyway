@@ -102,6 +102,22 @@ public class DriverDataSource implements DataSource {
      * @throws FlywayException when the datasource could not be created.
      */
     public DriverDataSource(ClassLoader classLoader, String driverClass, String url, String user, String password, String... initSqls) throws FlywayException {
+        this(classLoader, driverClass, url, user, password, null, initSqls);
+    }
+
+    /**
+     * Creates a new DriverDataSource.
+     *
+     * @param classLoader The ClassLoader to use.
+     * @param driverClass The name of the JDBC Driver class to use. {@code null} for url-based autodetection.
+     * @param url         The JDBC URL to use for connecting through the Driver. (required)
+     * @param user        The JDBC user to use for connecting through the Driver.
+     * @param password    The JDBC password to use for connecting through the Driver.
+     * @param connectionProperties    Additional connection properties to pass to the Driver.
+     * @param initSqls    The (optional) sql statements to execute to initialize a connection immediately after obtaining it.
+     * @throws FlywayException when the datasource could not be created.
+     */
+    public DriverDataSource(ClassLoader classLoader, String driverClass, String url, String user, String password, Properties connectionProperties, String... initSqls) throws FlywayException {
         if (!StringUtils.hasText(url)) {
             throw new FlywayException("Missing required JDBC URL. Unable to create DataSource!");
         }
@@ -118,7 +134,11 @@ public class DriverDataSource implements DataSource {
             }
         }
 
-        this.defaultProps = detectPropsForUrl(url);
+        Properties detectedProps = detectPropsForUrl(url);
+        if(connectionProperties != null) {
+            detectedProps.putAll(connectionProperties);
+        }
+        this.defaultProps = new Properties(detectedProps);
 
         try {
             this.driver = ClassUtils.instantiate(driverClass, classLoader);

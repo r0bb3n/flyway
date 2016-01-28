@@ -57,6 +57,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This is the centre point of Flyway, and for most users, the only class they will ever have to deal with.
@@ -71,6 +73,8 @@ public class Flyway implements FlywayConfiguration {
      * Property name prefix for placeholders that are configured through properties.
      */
     private static final String PLACEHOLDERS_PROPERTY_PREFIX = "flyway.placeholders.";
+
+    private static final Pattern KEY_VALUE_PATTERN = Pattern.compile("([^=]+)=(.+)");
 
     /**
      * The locations to scan recursively for migrations.
@@ -687,7 +691,7 @@ public class Flyway implements FlywayConfiguration {
      * @param initSqls The (optional) sql statements to execute to initialize a connection immediately after obtaining it.
      */
     public void setDataSource(String url, String user, String password, String... initSqls) {
-        this.dataSource = new DriverDataSource(classLoader, null, url, user, password, initSqls);
+        this.dataSource = new DriverDataSource(classLoader, null, url, user, password, null, initSqls);
         createdDataSource = true;
     }
 
@@ -1059,8 +1063,22 @@ public class Flyway implements FlywayConfiguration {
         String userProp = getValueAndRemoveEntry(props, "flyway.user");
         String passwordProp = getValueAndRemoveEntry(props, "flyway.password");
 
+        String connectionPropsProp = getValueAndRemoveEntry(props, "flyway.connectionProperties");
+        Properties connProps = new Properties();
+        if (StringUtils.hasText(connectionPropsProp)) {
+            String[] keyValues = StringUtils.tokenizeToStringArray(connectionPropsProp, ";");
+            for (String keyValue : keyValues) {
+                Matcher m = KEY_VALUE_PATTERN.matcher(keyValue.trim());
+                if (m.matches()) {
+                    connProps.setProperty(m.group(1), m.group(2));
+                } else {
+                    LOG.warn("Connection property '" + keyValue + "' could not be parsed - ignoring.");
+                }
+            }
+        }
+
         if (StringUtils.hasText(urlProp)) {
-            setDataSource(new DriverDataSource(classLoader, driverProp, urlProp, userProp, passwordProp));
+            setDataSource(new DriverDataSource(classLoader, driverProp, urlProp, userProp, passwordProp, connProps));
         } else if (!StringUtils.hasText(urlProp) &&
                 (StringUtils.hasText(driverProp) || StringUtils.hasText(userProp) || StringUtils.hasText(passwordProp))) {
             LOG.warn("Discarding INCOMPLETE dataSource configuration! flyway.url must be set.");
